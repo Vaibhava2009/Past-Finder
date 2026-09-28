@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Look up a place and explore its history as a clear, sourced timeline." />
+  <title>Pastfinder — Place histories</title>
+  <style>
+    :root {
+      --ink: #16201b;
+      --paper: #f4f0e7;
+      --paper-deep: #e7dfd0;
+      --sun: #d97634;
+      --sun-soft: #f6d3a9;
+      --moss: #3e705b;
+      --line: rgba(22, 32, 27, 0.15);
+      --muted: #687067;
+      --white: #fffdf8;
+      --shadow: 0 22px 55px rgba(29, 34, 27, 0.13);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(217, 118, 52, 0.15), transparent 31rem),
+        linear-gradient(112deg, var(--paper) 0%, #f8f4eb 58%, var(--paper-deep) 100%);
+    }
+
+    button, input { font: inherit; }
+
+    .shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+
+    .site-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 25px 0 18px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.28rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      text-decoration: none;
+    }
+
+    .brand-owner {
+      margin-left: 8px;
+      padding-left: 10px;
+      color: var(--muted);
+      border-left: 1px solid var(--line);
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      color: var(--white);
+      background: var(--sun);
+      border-radius: 50% 50% 50% 8px;
+      font-family: Georgia, serif;
+      font-size: 1.05rem;
+      transform: rotate(-17deg);
+    }
+
+    .header-note {
+      color: var(--muted);
+      font-size: 0.82rem;
+      letter-spacing: 0.02em;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.17fr) minmax(280px, 0.83fr);
+      gap: 42px;
+      align-items: end;
+      padding: 66px 0 55px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0 0 17px;
+      color: var(--moss);
+      font-size: 0.71rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 27px;
+      height: 1px;
+      background: currentColor;
+      content: "";
+    }
+
+    h1, h2, p { margin-top: 0; }
+
+    h1 {
+      max-width: 670px;
+      margin-bottom: 19px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.7rem, 6.25vw, 5.25rem);
+      font-weight: 500;
+      letter-spacing: -0.065em;
+      line-height: 0.92;
+    }
+
+    h1 em { color: var(--sun); font-style: italic; }
+
+    .intro {
+      max-width: 540px;
+      color: #4b554d;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .hero-stat {
+      position: relative;
+      overflow: hidden;
+      min-height: 226px;
+      padding: 25px;
+      color: var(--white);
+      background: var(--moss);
+      border-radius: 4px 42px 4px 4px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-stat::before, .hero-stat::after {
+      position: absolute;
+      border: 1px solid rgba(255, 253, 248, 0.28);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .hero-stat::before { width: 240px; height: 240px; right: -90px; top: -112px; }
+    .hero-stat::after { width: 170px; height: 170px; right: 26px; bottom: -104px; }
+
+    .stat-label, .stat-caption { position: relative; z-index: 1; }
+    .stat-label { margin: 0; opacity: 0.78; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; }
+    .stat-number { position: relative; z-index: 1; margin: 38px 0 6px; font-family: Georgia, serif; font-size: clamp(3rem, 5vw, 4.6rem); letter-spacing: -0.07em; line-height: 0.85; }
+    .stat-caption { max-width: 215px; margin: 0; font-size: 0.92rem; line-height: 1.45; }
+
+    .search-panel {
+      position: relative;
+      z-index: 2;
+      padding: 23px;
+      background: var(--white);
+      border: 1px solid rgba(22, 32, 27, 0.09);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .search-label { display: block; margin-bottom: 11px; font-size: 0.81rem; font-weight: 750; letter-spacing: 0.02em; }
+
+    .search-row { display: flex; gap: 10px; }
+
+    .place-input {
+      min-width: 0;
+      flex: 1;
+      padding: 13px 15px;
+      color: var(--ink);
+      background: #fbf8f1;
+      border: 1px solid #cfc8bb;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    .place-input:focus { border-color: var(--moss); box-shadow: 0 0 0 3px rgba(62, 112, 91, 0.15); }
+
+    .search-button {
+      flex: 0 0 auto;
+      padding: 13px 20px;
+      color: var(--white);
+      background: var(--ink);
+      border: 1px solid var(--ink);
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 750;
+      transition: background 150ms ease, transform 150ms ease;
+    }
+
+    .search-button:hover { background: var(--moss); border-color: var(--moss); transform: translateY(-1px); }
+    .search-button:disabled { cursor: wait; opacity: 0.68; transform: none; }
+
+    .results-wrap { padding: 48px 0 76px; }
+
+    .results-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .results-title { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.05rem, 4vw, 3.3rem); font-weight: 500; letter-spacing: -0.05em; line-height: 1; }
+    .results-subtitle { margin: 8px 0 0; color: var(--muted); font-size: 0.92rem; }
+    .source-link { flex: 0 0 auto; color: var(--moss); font-size: 0.81rem; font-weight: 700; text-decoration: none; }
+    .source-link:hover { color: var(--sun); }
+
+    .place-facts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 13px;
+      margin: 0 0 33px;
+    }
+
+    .fact-card {
+      min-height: 151px;
+      padding: 19px 19px 16px;
+      background: rgba(255, 253, 248, 0.69);
+      border-top: 3px solid var(--moss);
+    }
+
+    .fact-card:nth-child(2) { border-top-color: var(--sun); }
+    .fact-card:nth-child(3) { border-top-color: #7a6755; }
+    .fact-card:nth-child(4) { border-top-color: #465f83; }
+    .fact-card:nth-child(5) { border-top-color: #745b83; }
+    .fact-label { display: block; margin-bottom: 11px; color: var(--muted); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+    .fact-value { display: block; margin-bottom: 7px; font-family: Georgia, "Times New Roman", serif; font-size: 1.22rem; font-weight: 500; letter-spacing: -0.025em; line-height: 1.12; }
+    .fact-note { margin: 0; color: #596259; font-size: 0.82rem; line-height: 1.45; }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(230px, 0.45fr);
+      gap: 0 46px;
+      padding-top: 6px;
+      border-top: 1px solid var(--line);
+    }
+
+    .events { position: relative; }
+
+    .event {
+      position: relative;
+      display: grid;
+      grid-template-columns: 104px minmax(0, 1fr);
+      gap: 18px;
+      padding: 24px 0 25px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .event::before {
+      position: absolute;
+      top: 32px;
+      left: 92px;
+      width: 9px;
+      height: 9px;
+      background: var(--sun);
+      border: 3px solid var(--paper);
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px var(--sun);
+      content: "";
+    }
+
+    .event-date { padding-right: 18px; color: var(--sun); font-family: Georgia, serif; font-size: 0.98rem; line-height: 1.4; text-align: right; }
+    .event-copy { margin: 0; font-size: 1.01rem; line-height: 1.6; }
+
+    .place-card { align-self: start; margin-top: 24px; padding: 23px; background: rgba(255, 253, 248, 0.66); border-left: 3px solid var(--moss); }
+    .place-card h3 { margin: 0 0 10px; font-family: Georgia, serif; font-size: 1.45rem; font-weight: 500; letter-spacing: -0.03em; }
+    .place-card p { margin: 0; color: #4f594f; font-size: 0.9rem; line-height: 1.55; }
+    .place-card .card-kicker { margin-bottom: 7px; color: var(--moss); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+    .mini-map { margin-top: 20px; padding-top: 17px; border-top: 1px solid var(--line); }
+    .mini-map-label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 0.72rem; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
+    .mini-map-frame { display: block; width: 100%; height: 165px; border: 0; }
+    .mini-map-link { display: inline-block; margin-top: 9px; color: var(--moss); font-size: 0.79rem; font-weight: 700; text-decoration: none; }
+    .mini-map-link:hover { color: var(--sun); }
+    .visit-list { margin: 20px 0 0; padding: 17px 0 0; border-top: 1px solid var(--line); }
+    .visit-list-label { display: block; margin-bottom: 10px; color: var(--moss); font-size: 0.72rem; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
+    .visit-list ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .visit-list li { position: relative; padding-left: 15px; color: #4f594f; font-size: 0.88rem; line-height: 1.45; }
+    .visit-list li::before { position: absolute; left: 0; top: 0.56em; width: 6px; height: 6px; background: var(--sun); border-radius: 50%; content: ""; }
+
+    .empty-state { padding: 48px 0; text-align: center; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .empty-state p { max-width: 490px; margin: 8px auto 0; color: var(--muted); line-height: 1.55; }
+    .error-message { color: #a33b23 !important; }
+
+    .loader { display: inline-block; width: 22px; height: 22px; margin-bottom: 10px; border: 2px solid rgba(62, 112, 91, 0.22); border-top-color: var(--moss); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .footer { padding: 19px 0 27px; color: var(--muted); border-top: 1px solid var(--line); font-size: 0.77rem; }
+
+    @media (max-width: 700px) {
+      .shell { width: min(100% - 28px, 1120px); }
+      .header-note { display: none; }
+      .hero { grid-template-columns: 1fr; gap: 28px; padding: 42px 0 38px; }
+      .hero-stat { min-height: 172px; }
+      .stat-number { margin-top: 24px; }
+      .search-row { flex-direction: column; }
+      .search-button { width: 100%; }
+      .results-wrap { padding-top: 33px; }
+      .results-meta { display: block; }
+      .source-link { display: inline-block; margin-top: 15px; }
+      .timeline { grid-template-columns: 1fr; }
+      .place-card { margin-top: 27px; }
+      .place-facts { grid-template-columns: 1fr; gap: 10px; }
+      .fact-card { min-height: 0; }
+    }
+
+    @media (max-width: 430px) {
+      h1 { font-size: 2.75rem; }
+      .event { grid-template-columns: 74px minmax(0, 1fr); gap: 14px; }
+      .event::before { left: 64px; }
+      .event-date { padding-right: 13px; font-size: 0.85rem; }
+      .event-copy { font-size: 0.94rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell site-header">
+    <a class="brand" href="#top" aria-label="Pastfinder home"><span class="brand-mark" aria-hidden="true">P</span>Pastfinder <span class="brand-owner">Vaibhava Kumar · Owner</span></a>
+    <span class="header-note">A small atlas of big stories</span>
+  </header>
+
+  <main id="top">
+    <section class="shell hero" aria-labelledby="hero-title">
+      <div>
+        <p class="eyebrow">History, made legible</p>
+        <h1 id="hero-title">Every place has a <em>past</em> worth finding.</h1>
+        <p class="intro">Type a town, city, landmark, or region. Pastfinder gathers its story into a calm, easy-to-scan timeline.</p>
+      </div>
+      <aside class="hero-stat" aria-label="About the service">
+        <p class="stat-label">One place at a time</p>
+        <p class="stat-number">∞</p>
+        <p class="stat-caption">From ancient settlements to the streets you know today.</p>
+      </aside>
+    </section>
+
+    <section class="shell search-panel" aria-label="Search for a place">
+      <form id="place-form">
+        <label class="search-label" for="place-input">Where would you like to begin?</label>
+        <div class="search-row">
+          <input class="place-input" id="place-input" name="place" type="search" autocomplete="off" placeholder="Place" required />
+          <button class="search-button" id="search-button" type="submit">Find its history</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="shell results-wrap" id="history-results" aria-live="polite" aria-busy="false">
+      <div class="results-meta">
+        <div>
+          <p class="eyebrow">A short history</p>
+          <h2 class="results-title" id="place-title">Hampi, India</h2>
+          <p class="results-subtitle" id="place-subtitle">A selected introduction to this extraordinary former capital.</p>
+        </div>
+        <a class="source-link" id="source-link" href="https://en.wikipedia.org/wiki/Hampi" target="_blank" rel="noopener noreferrer">Read the full source ↗</a>
+      </div>
+
+      <div class="place-facts" aria-label="Quick facts about Hampi" id="place-facts">
+        <article class="fact-card" id="foundation-card">
+          <span class="fact-label">Founded / established</span>
+          <strong class="fact-value" id="foundation-fact">c. 1336</strong>
+          <p class="fact-note" id="foundation-note">It rose as the capital of the Vijayanagara Empire.</p>
+        </article>
+        <article class="fact-card" id="language-card">
+          <span class="fact-label">Languages spoken</span>
+          <strong class="fact-value" id="language-fact">Kannada &amp; Telugu</strong>
+          <p class="fact-note" id="language-note">Languages closely associated with the historical region.</p>
+        </article>
+        <article class="fact-card" id="dish-card">
+          <span class="fact-label">Famous local dish</span>
+          <strong class="fact-value" id="dish-fact">Bisi bele bath</strong>
+          <p class="fact-note" id="dish-note">A beloved rice-and-lentil dish from Karnataka.</p>
+        </article>
+        <article class="fact-card" id="population-card">
+          <span class="fact-label">Population</span>
+          <strong class="fact-value" id="population-fact">2,133</strong>
+          <p class="fact-note" id="population-note">Recorded population of Hampi village in the 2011 Census.</p>
+        </article>
+        <article class="fact-card" id="area-card">
+          <span class="fact-label">Area</span>
+          <strong class="fact-value" id="area-fact">10,250 acres</strong>
+          <p class="fact-note" id="area-note">Approximate area of the Hampi heritage landscape.</p>
+        </article>
+      </div>
+
+      <div class="timeline" id="timeline-content">
+        <div class="events" id="events-list">
+          <article class="event">
+            <div class="event-date">14th century</div>
+            <p class="event-copy">Hampi became the capital of the Vijayanagara Empire, a powerful South Indian kingdom that prospered for more than two centuries.</p>
+          </article>
+          <article class="event">
+            <div class="event-date">15th–16th c.</div>
+            <p class="event-copy">At its height, the city was one of the world’s largest and wealthiest urban centres, celebrated for its markets, temples and monumental stone architecture.</p>
+          </article>
+          <article class="event">
+            <div class="event-date">1565</div>
+            <p class="event-copy">After the Battle of Talikota, Vijayanagara was defeated. The city was subsequently sacked and largely abandoned.</p>
+          </article>
+          <article class="event">
+            <div class="event-date">1986</div>
+            <p class="event-copy">The Group of Monuments at Hampi was inscribed as a UNESCO World Heritage Site, recognising its exceptional archaeological and cultural value.</p>
+          </article>
+        </div>
+        <aside class="place-card" id="place-card">
+          <p class="card-kicker">Why it matters</p>
+          <h3>Stones that remember</h3>
+          <p>Hampi’s surviving landscape brings together royal, sacred and everyday life from the height of the Vijayanagara Empire.</p>
+          <div class="visit-list">
+            <span class="visit-list-label">Places to visit</span>
+            <ul>
+              <li>Virupaksha Temple</li>
+              <li>Vittala Temple and its stone chariot</li>
+              <li>Lotus Mahal</li>
+            </ul>
+          </div>
+          <div class="mini-map">
+            <span class="mini-map-label">Hampi on the map</span>
+            <iframe class="mini-map-frame" title="Map of Hampi" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox=76.4240%2C15.2950%2C76.5000%2C15.3750&amp;layer=mapnik&amp;marker=15.3350%2C76.4620"></iframe>
+            <a class="mini-map-link" href="https://www.openstreetmap.org/?mlat=15.3350&amp;mlon=76.4620#map=14/15.3350/76.4620" target="_blank" rel="noopener noreferrer">Open larger map ↗</a>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('place-form');
+    const input = document.getElementById('place-input');
+    const button = document.getElementById('search-button');
+    const results = document.getElementById('history-results');
+    const title = document.getElementById('place-title');
+    const subtitle = document.getElementById('place-subtitle');
+    const sourceLink = document.getElementById('source-link');
+    const placeFacts = document.getElementById('place-facts');
+    const foundationCard = document.getElementById('foundation-card');
+    const languageCard = document.getElementById('language-card');
+    const dishCard = document.getElementById('dish-card');
+    const populationCard = document.getElementById('population-card');
+    const areaCard = document.getElementById('area-card');
+    const foundationFact = document.getElementById('foundation-fact');
+    const foundationNote = document.getElementById('foundation-note');
+    const languageFact = document.getElementById('language-fact');
+    const languageNote = document.getElementById('language-note');
+    const dishFact = document.getElementById('dish-fact');
+    const dishNote = document.getElementById('dish-note');
+    const populationFact = document.getElementById('population-fact');
+    const populationNote = document.getElementById('population-note');
+    const areaFact = document.getElementById('area-fact');
+    const areaNote = document.getElementById('area-note');
+    const content = document.getElementById('timeline-content');
+    const eventsList = document.getElementById('events-list');
+    const placeCard = document.getElementById('place-card');
+    let activeSearch = 0;
+
+    const historicalWords = /\b(history|historic|century|founded|established|settled|settlement|dynasty|empire|kingdom|king|queen|ruler|rule|colonial|independence|war|battle|invasion|conquered|destroyed|rebuilt|became|capital|capitalism|ancient|medieval|archaeolog|heritage|monument|temple|fort|palace|civilization|civilisation|occupation)\b/i;
+    const datePattern = /\b(?:c\.\s*)?(?:\d{1,4}(?:s|\s*(?:BC|BCE|AD|CE))?|\d{1,2}(?:st|nd|rd|th)\s+century|early\s+\d{1,2}(?:st|nd|rd|th)\s+century|mid-\d{1,2}(?:st|nd|rd|th)\s+century|late\s+\d{1,2}(?:st|nd|rd|th)\s+century)\b/i;
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+    }
+
+    function shorten(sentence) {
+      const trimmed = sentence.replace(/\s+/g, ' ').trim();
+      if (trimmed.length <= 285) return trimmed;
+      const cut = trimmed.slice(0, 282).lastIndexOf(' ');
+      return `${trimmed.slice(0, cut > 120 ? cut : 282)}…`;
+    }
+
+    function makePoints(extract, placeName) {
+      const sentences = extract
+        .replace(/\[[^\]]*\]/g, '')
+        .replace(/\s+/g, ' ')
+        .match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [];
+
+      const candidates = sentences
+        .map((sentence, index) => ({ text: shorten(sentence), index }))
+        .filter(item => item.text.length >= 55 && item.text.length <= 295)
+        .filter(item => !/^(See also|References|External links|Notes)\b/i.test(item.text));
+
+      const modernStatistics = /\b(?:gdp|gross domestic product|population|census|per capita|rank(?:ed|ing)?|largest|smallest|economic growth|economic development|social and economic|literacy rate|population density|administrative division)\b/i;
+      const historical = candidates.filter(item => {
+        const mentionsHistory = historicalWords.test(item.text) || datePattern.test(item.text);
+        return mentionsHistory && !modernStatistics.test(item.text);
+      });
+      const selected = historical.slice(0, 10);
+
+      const unique = [];
+      const seen = new Set();
+      selected.forEach(item => {
+        const key = item.text.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 85);
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(item);
+        }
+      });
+
+      return unique.map((item, index) => {
+        const match = item.text.match(datePattern);
+        return {
+          date: match ? match[0].replace(/\b\w/g, letter => letter.toUpperCase()) : index === 0 ? 'Origins' : 'Later period',
+          text: item.text
+        };
+      });
+    }
+
+    function sourceUrl(pageTitle) {
+      return `https://en.wikipedia.org/wiki/${encodeURIComponent(pageTitle.replace(/ /g, '_'))}`;
+    }
+
+    function normalizedPlaceName(value) {
+      return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    }
+
+    function isUsablePlacePage(page) {
+      return Boolean(
+        page &&
+        !page.missing &&
+        page.extract &&
+        page.coordinates &&
+        page.coordinates.length &&
+        !(page.pageprops && Object.prototype.hasOwnProperty.call(page.pageprops, 'disambiguation'))
+      );
+    }
+
+    function titlesReferToSamePlace(query, pageTitle) {
+      const queryName = normalizedPlaceName(query.split(',')[0]);
+      const titleName = normalizedPlaceName(pageTitle);
+      return Boolean(queryName && titleName && (queryName === titleName || queryName.includes(titleName) || titleName.includes(queryName)));
+    }
+
+    async function getPlacePage(titleToFind) {
+      const data = await requestJson('https://en.wikipedia.org/w/api.php', {
+        action: 'query',
+        formatversion: '2',
+        titles: titleToFind,
+        redirects: '1',
+        prop: 'extracts|pageprops|coordinates',
+        explaintext: '1',
+        exchars: '7000'
+      });
+      return data.query && data.query.pages && data.query.pages[0];
+    }
+
+    async function resolvePlacePage(placeName) {
+      const directCandidates = [...new Set([placeName.trim(), placeName.split(',')[0].trim()])].filter(Boolean);
+      for (const candidate of directCandidates) {
+        const page = await getPlacePage(candidate);
+        if (isUsablePlacePage(page) && titlesReferToSamePlace(placeName, page.title)) return page;
+      }
+
+      const searchData = await requestJson('https://en.wikipedia.org/w/api.php', {
+        action: 'query',
+        formatversion: '2',
+        list: 'search',
+        srsearch: placeName,
+        srlimit: '5'
+      });
+      const searchResults = searchData.query && searchData.query.search ? searchData.query.search : [];
+      const matchingResult = searchResults.find(result => titlesReferToSamePlace(placeName, result.title));
+      if (!matchingResult) return null;
+
+      const page = await getPlacePage(matchingResult.title);
+      return isUsablePlacePage(page) ? page : null;
+    }
+
+    function plainTextFromHtml(html) {
+      const documentFragment = new DOMParser().parseFromString(html, 'text/html');
+      return (documentFragment.body.textContent || '').replace(/\[\d+\]/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    async function getHistoryExtract(pageTitle, fallbackExtract) {
+      try {
+        const sectionsData = await requestJson('https://en.wikipedia.org/w/api.php', {
+          action: 'parse',
+          page: pageTitle,
+          prop: 'sections'
+        });
+        const sections = sectionsData.parse && sectionsData.parse.sections ? sectionsData.parse.sections : [];
+        const historySection = sections.find(section => /^(history|historical overview|early history)$/i.test((section.line || '').trim()));
+        if (!historySection) return fallbackExtract;
+
+        const sectionData = await requestJson('https://en.wikipedia.org/w/api.php', {
+          action: 'parse',
+          page: pageTitle,
+          prop: 'text',
+          section: historySection.index
+        });
+        const historyText = sectionData.parse && sectionData.parse.text && sectionData.parse.text['*']
+          ? plainTextFromHtml(sectionData.parse.text['*'])
+          : '';
+        return historyText.length >= 350 ? historyText : fallbackExtract;
+      } catch (error) {
+        return fallbackExtract;
+      }
+    }
+
+    function mapMarkup(placeName, coordinate) {
+      const latitude = coordinate && Number(coordinate.lat);
+      const longitude = coordinate && Number(coordinate.lon);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return '';
+
+      const latitudePadding = 0.035;
+      const longitudePadding = 0.05 / Math.max(0.25, Math.cos(latitude * Math.PI / 180));
+      const bbox = [
+        longitude - longitudePadding,
+        latitude - latitudePadding,
+        longitude + longitudePadding,
+        latitude + latitudePadding
+      ].map(value => value.toFixed(4)).join(',');
+      const marker = `${latitude.toFixed(4)},${longitude.toFixed(4)}`;
+      const embedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${encodeURIComponent(marker)}`;
+      const largerMapUrl = `https://www.openstreetmap.org/?mlat=${latitude.toFixed(4)}&mlon=${longitude.toFixed(4)}#map=13/${latitude.toFixed(4)}/${longitude.toFixed(4)}`;
+      return `
+        <div class="mini-map">
+          <span class="mini-map-label">${escapeHtml(placeName)} on the map</span>
+          <iframe class="mini-map-frame" title="Map of ${escapeHtml(placeName)}" loading="lazy" src="${escapeHtml(embedUrl)}"></iframe>
+          <a class="mini-map-link" href="${escapeHtml(largerMapUrl)}" target="_blank" rel="noopener noreferrer">Open larger map ↗</a>
+        </div>`;
+    }
+
+    function visitsMarkup(placeName) {
+      const normalized = normalizedPlaceName(placeName);
+      const destinationCatalog = [
+        { places: ['hampi'], destinations: ['Virupaksha Temple', 'Vittala Temple and its stone chariot', 'Lotus Mahal'] },
+        { places: ['bihar'], destinations: ['Mahabodhi Temple, Bodh Gaya', 'Nalanda Mahavihara', 'Rajgir'] },
+        { places: ['patna'], destinations: ['Golghar', 'Bihar Museum', 'Takht Sri Harmandir Sahib'] },
+        { places: ['mumbai', 'bombay'], destinations: ['Gateway of India', 'Elephanta Caves', 'Chhatrapati Shivaji Maharaj Terminus'] },
+        { places: ['alexandria'], destinations: ['Bibliotheca Alexandrina', 'Citadel of Qaitbay', 'Catacombs of Kom El Shoqafa'] },
+        { places: ['kyoto'], destinations: ['Fushimi Inari Taisha', 'Kinkaku-ji', 'Kiyomizu-dera'] },
+        { places: ['machupicchu'], destinations: ['Machu Picchu citadel', 'Sun Gate', 'Inca Bridge'] }
+      ];
+      const match = destinationCatalog.find(item => item.places.includes(normalized));
+      if (!match) return '';
+      return `
+        <div class="visit-list">
+          <span class="visit-list-label">Places to visit</span>
+          <ul>${match.destinations.map(destination => `<li>${escapeHtml(destination)}</li>`).join('')}</ul>
+        </div>`;
+    }
+
+    function setFact(valueElement, noteElement, value, note) {
+      valueElement.textContent = value;
+      noteElement.textContent = note;
+    }
+
+    function updateFactsVisibility() {
+      placeFacts.hidden = foundationCard.hidden && languageCard.hidden && dishCard.hidden && populationCard.hidden && areaCard.hidden;
+    }
+
+    function renderFactsLoading() {
+      placeFacts.setAttribute('aria-label', 'Quick facts are loading');
+      placeFacts.hidden = false;
+      foundationCard.hidden = false;
+      languageCard.hidden = false;
+      dishCard.hidden = false;
+      populationCard.hidden = false;
+      areaCard.hidden = false;
+      setFact(foundationFact, foundationNote, 'Finding…', 'Checking the place’s establishment date.');
+      setFact(languageFact, languageNote, 'Finding…', 'Checking verified language information.');
+      setFact(dishFact, dishNote, 'Finding…', 'Looking for a named local dish in the source.');
+      setFact(populationFact, populationNote, 'Finding…', 'Checking the latest available population figure.');
+      setFact(areaFact, areaNote, 'Finding…', 'Converting the available area into acres.');
+    }
+
+    function renderFactsUnavailable() {
+      foundationCard.hidden = true;
+      languageCard.hidden = true;
+      dishCard.hidden = true;
+      populationCard.hidden = true;
+      areaCard.hidden = true;
+      updateFactsVisibility();
+    }
+
+    async function requestJson(baseUrl, parameters) {
+      const params = new URLSearchParams({ format: 'json', origin: '*', ...parameters });
+      const response = await fetch(`${baseUrl}?${params.toString()}`);
+      if (!response.ok) throw new Error('Reference request failed');
+      return response.json();
+    }
+
+    function claimEntityIds(claims, property) {
+      return (claims[property] || [])
+        .map(claim => claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value)
+        .filter(value => value && value.id)
+        .map(value => value.id);
+    }
+
+    function claimTimes(claims, property) {
+      return (claims[property] || [])
+        .map(claim => claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value)
+        .filter(value => value && value.time)
+        .map(value => value.time);
+    }
+
+    function formatWikidataTime(time) {
+      const match = time.match(/^([+-])(\d{4,})-(\d{2})-(\d{2})/);
+      if (!match) return null;
+      const year = Number(match[2]);
+      if (!Number.isFinite(year)) return null;
+      const displayYear = match[1] === '-' ? `${year - 1} BCE` : String(year);
+      if (match[3] === '00') return displayYear;
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const month = monthNames[Number(match[3]) - 1];
+      return month ? `${month} ${displayYear}` : displayYear;
+    }
+
+    function populationFromClaims(claims) {
+      const figures = (claims.P1082 || [])
+        .map(claim => {
+          const amount = claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value && claim.mainsnak.datavalue.value.amount;
+          const pointInTime = claim.qualifiers && claim.qualifiers.P585 && claim.qualifiers.P585[0] && claim.qualifiers.P585[0].datavalue && claim.qualifiers.P585[0].datavalue.value && claim.qualifiers.P585[0].datavalue.value.time;
+          const numericAmount = Number(amount);
+          const yearMatch = pointInTime && pointInTime.match(/^[+-](\d{4,})/);
+          return {
+            amount: numericAmount,
+            year: yearMatch ? Number(yearMatch[1]) : 0
+          };
+        })
+        .filter(item => Number.isFinite(item.amount) && item.amount >= 0)
+        .sort((a, b) => b.year - a.year);
+      if (!figures.length) return null;
+      const latest = figures[0];
+      return {
+        value: new Intl.NumberFormat('en').format(Math.round(latest.amount)),
+        note: latest.year ? `Population figure available for ${latest.year}.` : 'Population figure available from Wikidata.'
+      };
+    }
+
+    function areaFromClaims(claims) {
+      const statement = (claims.P2046 || [])
+        .map(claim => claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value)
+        .find(value => value && value.amount);
+      if (!statement) return null;
+
+      const amount = Number(statement.amount);
+      const unitId = String(statement.unit || '').split('/').pop();
+      if (!Number.isFinite(amount) || amount < 0) return null;
+
+      const acresPerUnit = {
+        Q712226: 247.105381,  // square kilometre
+        Q25343: 0.000247105381, // square metre
+        Q35852: 2.47105381, // hectare
+        Q253276: 640 // square mile
+      };
+      const acres = acresPerUnit[unitId] ? amount * acresPerUnit[unitId] : null;
+      if (!acres || !Number.isFinite(acres)) return null;
+
+      const precision = acres < 10 ? 1 : 0;
+      return {
+        value: `${new Intl.NumberFormat('en', { maximumFractionDigits: precision }).format(acres)} acres`,
+        note: 'Area converted to acres from the available reference figure.'
+      };
+    }
+
+    async function getEntity(id, props) {
+      const data = await requestJson('https://www.wikidata.org/w/api.php', {
+        action: 'wbgetentities',
+        ids: id,
+        props
+      });
+      return data.entities && data.entities[id];
+    }
+
+    async function getEntityLabels(ids) {
+      const uniqueIds = [...new Set(ids)].slice(0, 4);
+      if (!uniqueIds.length) return [];
+      const data = await requestJson('https://www.wikidata.org/w/api.php', {
+        action: 'wbgetentities',
+        ids: uniqueIds.join('|'),
+        props: 'labels',
+        languages: 'en'
+      });
+      return uniqueIds
+        .map(id => data.entities && data.entities[id] && data.entities[id].labels && data.entities[id].labels.en && data.entities[id].labels.en.value)
+        .filter(Boolean);
+    }
+
+    function foundingFromExtract(extract) {
+      const sentence = (extract.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) || [])
+        .find(item => /\b(founded|established|settled|dates back|originated)\b/i.test(item) && datePattern.test(item));
+      if (!sentence) return null;
+      const date = sentence.match(datePattern);
+      return date ? { value: date[0], note: 'Taken from the place reference article.' } : null;
+    }
+
+    async function getFoundationAndLanguages(itemId, extract) {
+      const fallbackFoundation = foundingFromExtract(extract);
+      if (!itemId) return { foundation: fallbackFoundation, languages: [], languageScope: null, population: null, area: null };
+
+      const entity = await getEntity(itemId, 'claims');
+      if (!entity || !entity.claims) return { foundation: fallbackFoundation, languages: [], languageScope: null, population: null, area: null };
+
+      const claims = entity.claims;
+      const foundationTime = ['P571', 'P580', 'P1619']
+        .map(property => claimTimes(claims, property)[0])
+        .find(Boolean);
+      const formattedFoundation = foundationTime ? formatWikidataTime(foundationTime) : null;
+      const foundation = formattedFoundation
+        ? { value: formattedFoundation, note: 'Verified establishment data from Wikidata.' }
+        : fallbackFoundation;
+
+      const languageIds = claimEntityIds(claims, 'P37');
+      const languageScope = languageIds.length ? 'place' : null;
+
+      return {
+        foundation,
+        languages: await getEntityLabels(languageIds),
+        languageScope,
+        population: populationFromClaims(claims),
+        area: areaFromClaims(claims)
+      };
+    }
+
+    function knownLocalDish(placeName) {
+      const normalized = placeName.toLowerCase().replace(/[^a-z]/g, '');
+      const dishes = [
+        { places: ['bihar', 'patna'], dish: 'Litti Chokha' },
+        { places: ['uttarpradesh', 'lucknow'], dish: 'Tunday Kababi' },
+        { places: ['varanasi', 'banaras'], dish: 'Kachori Sabzi' },
+        { places: ['maharashtra', 'mumbai'], dish: 'Vada Pav' },
+        { places: ['pune'], dish: 'Misal Pav' },
+        { places: ['rajasthan', 'jaipur'], dish: 'Dal Baati Churma' },
+        { places: ['gujarat', 'ahmedabad'], dish: 'Dhokla' },
+        { places: ['punjab', 'amritsar'], dish: 'Amritsari Kulcha' },
+        { places: ['haryana'], dish: 'Bajra Khichdi' },
+        { places: ['westbengal', 'kolkata', 'calcutta'], dish: 'Rosogolla' },
+        { places: ['odisha', 'orissa', 'bhubaneswar'], dish: 'Dalma' },
+        { places: ['assam', 'guwahati'], dish: 'Khar' },
+        { places: ['kerala', 'kochi', 'thiruvananthapuram'], dish: 'Appam and Stew' },
+        { places: ['tamilnadu', 'chennai'], dish: 'Idli Sambar' },
+        { places: ['karnataka', 'bengaluru', 'bangalore', 'hampi', 'mysore'], dish: 'Bisi Bele Bath' },
+        { places: ['andhrapradesh', 'vijayawada'], dish: 'Pesarattu' },
+        { places: ['telangana', 'hyderabad'], dish: 'Hyderabadi Biryani' },
+        { places: ['madhyapradesh', 'bhopal', 'indore'], dish: 'Poha' },
+        { places: ['chhattisgarh', 'raipur'], dish: 'Chila' },
+        { places: ['jharkhand', 'ranchi'], dish: 'Dhuska' },
+        { places: ['uttarakhand', 'dehradun'], dish: 'Aloo Ke Gutke' },
+        { places: ['himachalpradesh', 'shimla'], dish: 'Dham' },
+        { places: ['goa', 'panaji'], dish: 'Goan Fish Curry' },
+        { places: ['sikkim', 'gangtok'], dish: 'Momos' },
+        { places: ['arunachalpradesh', 'itanagar'], dish: 'Zan' },
+        { places: ['meghalaya', 'shillong'], dish: 'Jadoh' },
+        { places: ['manipur', 'imphal'], dish: 'Eromba' },
+        { places: ['mizoram', 'aizawl'], dish: 'Bai' },
+        { places: ['nagaland', 'kohima'], dish: 'Smoked Pork with Bamboo Shoot' },
+        { places: ['tripura', 'agartala'], dish: 'Mui Borok' },
+        { places: ['jammuandkashmir', 'srinagar'], dish: 'Rogan Josh' },
+        { places: ['ladakh', 'leh'], dish: 'Skyu' },
+        { places: ['delhi', 'newdelhi'], dish: 'Chole Bhature' },
+        { places: ['puducherry', 'pondicherry'], dish: 'Creole Curry' },
+        { places: ['andamanandnicobarislands', 'portblair'], dish: 'Fish Curry' },
+        { places: ['lakshadweep'], dish: 'Tuna Curry' }
+      ];
+      const match = dishes.find(item => item.places.includes(normalized));
+      return match ? {
+        dish: match.dish,
+        note: `A well-known regional dish associated with ${placeName}.`
+      } : null;
+    }
+
+    async function getLocalDish(placeName) {
+      return knownLocalDish(placeName);
+    }
+
+    async function hydrateFacts(page, requestId) {
+      try {
+        const [placeResult, cuisineResult] = await Promise.allSettled([
+          getFoundationAndLanguages(page.pageprops && page.pageprops.wikibase_item, page.extract),
+          getLocalDish(page.title)
+        ]);
+        if (requestId !== activeSearch) return;
+
+        const placeData = placeResult.status === 'fulfilled'
+          ? placeResult.value
+          : { foundation: null, languages: [], languageScope: null, population: null, area: null };
+        const cuisine = cuisineResult.status === 'fulfilled' ? cuisineResult.value : null;
+
+        placeFacts.setAttribute('aria-label', `Quick facts about ${page.title}`);
+        if (placeData.foundation) {
+          foundationCard.hidden = false;
+          setFact(foundationFact, foundationNote, placeData.foundation.value, placeData.foundation.note);
+        } else {
+          foundationCard.hidden = true;
+        }
+
+        if (placeData.languages.length) {
+          languageCard.hidden = false;
+          const languageText = placeData.languages.slice(0, 3).join(', ');
+          const scopeText = placeData.languageScope === 'country' ? 'Official language data for its country.' : 'Language data linked to the place.';
+          setFact(languageFact, languageNote, languageText, scopeText);
+        } else {
+          languageCard.hidden = true;
+        }
+
+        if (cuisine) {
+          dishCard.hidden = false;
+          setFact(dishFact, dishNote, cuisine.dish, cuisine.note || `Named in the ${cuisine.sourceTitle} reference article.`);
+        } else {
+          dishCard.hidden = true;
+        }
+
+        if (placeData.population) {
+          populationCard.hidden = false;
+          setFact(populationFact, populationNote, placeData.population.value, placeData.population.note);
+        } else {
+          populationCard.hidden = true;
+        }
+
+        if (placeData.area) {
+          areaCard.hidden = false;
+          setFact(areaFact, areaNote, placeData.area.value, placeData.area.note);
+        } else {
+          areaCard.hidden = true;
+        }
+        updateFactsVisibility();
+      } catch (error) {
+        if (requestId === activeSearch) renderFactsUnavailable();
+      }
+    }
+
+    function renderTimeline(placeName, extract, pageTitle, coordinate) {
+      const points = makePoints(extract, placeName);
+      title.textContent = placeName;
+      subtitle.textContent = `Key moments drawn from the ${pageTitle} reference article.`;
+      sourceLink.href = sourceUrl(pageTitle);
+      sourceLink.textContent = 'Read the full source ↗';
+
+      if (points.length < 2) {
+        content.innerHTML = `
+          <div class="empty-state">
+            <strong>There is a source article, but not enough detail to make a useful timeline yet.</strong>
+            <p>Try a broader place name, or open the source to explore the full entry.</p>
+          </div>`;
+        return;
+      }
+
+      eventsList.innerHTML = points.map(point => `
+        <article class="event">
+          <div class="event-date">${escapeHtml(point.date)}</div>
+          <p class="event-copy">${escapeHtml(point.text)}</p>
+        </article>`).join('');
+
+      placeCard.innerHTML = `
+        <p class="card-kicker">About this place</p>
+        <h3>${escapeHtml(placeName)}</h3>
+        <p>These ${points.length} notes preserve the order of the source article. Use the full source for citations and further context.</p>
+        ${visitsMarkup(placeName)}
+        ${mapMarkup(placeName, coordinate)}`;
+      content.replaceChildren(eventsList, placeCard);
+    }
+
+    function renderLoading(placeName) {
+      title.textContent = `Finding ${placeName}…`;
+      subtitle.textContent = 'Looking through the reference archive.';
+      sourceLink.removeAttribute('href');
+      sourceLink.textContent = 'Searching source…';
+      renderFactsLoading();
+      content.innerHTML = `<div class="empty-state"><span class="loader" aria-hidden="true"></span><p>Gathering the important dates, people and turning points.</p></div>`;
+    }
+
+    function renderError(placeName) {
+      title.textContent = `We couldn’t find “${placeName}”`;
+      subtitle.textContent = 'Try including a country, region or landmark name.';
+      sourceLink.href = 'https://en.wikipedia.org/';
+      sourceLink.textContent = 'Search Wikipedia ↗';
+      renderFactsUnavailable();
+      content.innerHTML = `<div class="empty-state"><strong>That search needs a little more detail.</strong><p class="error-message">For example, search “Alexandria, Egypt” rather than just “Alexandria”.</p></div>`;
+    }
+
+    async function findHistory(placeName) {
+      const cleanName = placeName.trim();
+      if (!cleanName) return;
+      const requestId = ++activeSearch;
+
+      results.setAttribute('aria-busy', 'true');
+      button.disabled = true;
+      button.textContent = 'Searching…';
+      renderLoading(cleanName);
+      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      try {
+        const page = await resolvePlacePage(cleanName);
+        if (!page) throw new Error('No usable place article');
+
+        const historyExtract = await getHistoryExtract(page.title, page.extract);
+        renderTimeline(page.title, historyExtract, page.title, page.coordinates && page.coordinates[0]);
+        await hydrateFacts(page, requestId);
+      } catch (error) {
+        if (requestId === activeSearch) renderError(cleanName);
+      } finally {
+        if (requestId === activeSearch) {
+          results.setAttribute('aria-busy', 'false');
+          button.disabled = false;
+          button.textContent = 'Find its history';
+        }
+      }
+    }
+
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      findHistory(input.value);
+    });
+
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.isComposing) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+  </script>
+</body>
+</html>
